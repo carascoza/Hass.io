@@ -1,0 +1,273 @@
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+# Uncomment this if you are using SSL/TLS, running in Docker container, etc.
+http:
+  #server_port: 8123
+  #base_url: !secret base_url
+  ssl_certificate: /ssl/fullchain.pem
+  ssl_key: /ssl/privkey.pem
+  ip_ban_enabled: true
+  login_attempts_threshold: 9
+
+# Permite que você emita comandos de voz do frontend em navegadores ativados
+conversation:
+
+# Text to speech
+tts:
+  # Google (google_say) - https://www.home-assistant.io/components/google_translate/
+  - platform: google_translate
+    language: "pt-br"
+    cache: true
+    cache_dir: /tmp/tts
+    time_memory: 300
+#    base_url: !secret Tts_base_url
+    service_name: google_say
+
+# Subscribe to Mark Frontend
+homeassistant:
+  packages: !include_dir_named packages
+  allowlist_external_dirs:
+    - "/config/www/temp"
+
+#Incluidos config
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+switch: !include configuration/switch.yaml
+#binary_sensor: !include configuration/binary_sensor.yaml
+sensor: !include configuration/sensor.yaml
+camera: !include configuration/camera.yaml
+input_text: !include configuration/input_text.yaml
+#localtuya: !include configuration/localtuya.yaml
+#customize: !include customize.yaml
+#themes: !include themes.yaml
+
+# Permite que outros componentes do Home Assistant processem fluxos de vídeo e áudio.
+ffmpeg:
+  ffmpeg_bin: /usr/bin/ffmpeg
+
+# Scripts python https://www.home-assistant.io/integrations/python_script/
+python_script:
+
+#Sonoff config local
+sonoff:
+  username: !secret sonoff_username
+  password: !secret sonoff_password
+  mode: local
+  reload: always # update device list every time HA starts
+  force_update: [temperature, power]
+  scan_interval: "00:05:00" # (optional) default 5 minutes
+  sensors: [temperature, humidity, power, current, voltage]
+  devices:
+    10009519ce:
+      device_class: light
+      name: Luz Escritorio
+
+# Example configuration.yaml entry for the Telegram Bot
+telegram_bot:
+  - platform: polling
+    api_key: !secret telegram_bot_api_key
+    allowed_chat_ids:
+      - !secret Chat_ID_caras
+
+# Example configuration.yaml entry for the notifier
+notify:
+  - name: TelegramCarascoza #nome que achar melhor
+    platform: telegram
+    chat_id: !secret Chat_ID_caras
+    services:
+      - service: TelegramCarascoza
+
+  - platform: nfandroidtv
+    name: Mi TV
+    host: !secret ip_androidtv
+
+  - platform: nfandroidtv
+    name: FireTV
+    host: !secret ip_FireTV
+
+#Configurar amazon alexa#
+alexa:
+  smart_home:
+    endpoint: https://api.amazonalexa.com/v3/events
+    client_id: !secret alexa_client_id_ ## que você pegou em permission
+    client_secret: !secret alexa_client_secret_ ## que você pegou em permission
+#    filter:
+#      include_entities:
+#        - alarm_control_panel.xiaomi_gateway_alarm
+#        - light.xiaomi_gateway_light
+#    entity_config:
+
+#Configurar Google assistant
+google_assistant:
+  project_id: !secret google_project_id
+  service_account: !include Home_MAC.json
+  report_state: true
+  entity_config:
+    switch.kitchen:
+      name: Home Carascoza
+      aliases:
+        - BRIGHT_LIGHTS
+        - ENTRY_LIGHTS
+      room: LIVING_ROOM
+
+# https://www.home-assistant.io/components/calendar.google/
+#google:
+#  client_id: !secret client_id_calendario
+#  client_secret: !secret client_secret_calendario
+
+input_select:
+  ytube_music_player_source:
+    name: Fonte
+    icon: mdi:music-box-multiple
+    options: # não altere nada aqui
+    - "Playlist Radio"
+    - "Playlist"
+  ytube_music_player_speakers:
+    name: Auto Falantes
+    icon: mdi:speaker
+    options: # não altere nada aqui
+    - "loading"
+  ytube_music_player_playlist:
+    name: Playlist
+    icon: mdi:playlist-music
+    options: # não altere nada aqui
+    - "loading"
+  ytube_music_player_playmode:
+    name: Modo
+    icon: mdi:playlist-music
+    options: # não altere nada aqui
+    - "Shuffle"
+    - "Random"
+    - "Shuffle Random"
+    - "Direct"
+
+input_boolean:
+  ytube_music_player_playcontinuous:
+    initial: true
+    name: "Reprodução Contínua"
+
+# Enables the frontend
+frontend:
+  themes: !include_dir_merge_named themes
+
+#discovery:
+
+# Proxmox VE
+proxmoxve:
+  - host: !secret ip_proxmox
+    username: !secret prox_user
+    password: !secret prox_pass
+    verify_ssl: false # change if needed based on your configuration
+#    port: 8006 # if it is 8006, you can omit this line
+    realm: pve
+    nodes:
+      - node: proxmox
+        vms: # use if you have virtual machines
+          - 100
+#        containers: # use if you have containers 
+#          - 101
+
+# Recorder MariaDB
+# https://www.home-assistant.io/integrations/recorder/
+recorder:
+  purge_keep_days: 10
+  db_url: !secret db_url
+  include:
+    domains:
+      - alarm_control_panel
+      - sensor
+      - binary_sensor
+      - switch
+      - automation
+      - light
+      - media_player
+      - device_tracker
+      - person
+      - updater
+      - timer
+      - input_boolean
+      - input_select
+      - input_text  
+
+# Example configuration.yaml entry
+logger:
+  default: critical
+  logs:
+    # log level for HA core
+    homeassistant.core: fatal
+
+    # log level for MQTT integration
+    homeassistant.components.mqtt: warning
+
+    # log level for all python scripts
+    homeassistant.components.python_script: warning
+
+    # individual log level for this python script
+    homeassistant.components.python_script.my_new_script.py: debug
+
+    # log level for SmartThings lights
+    homeassistant.components.smartthings.light: info
+
+    # log level for a custom component
+    custom_components.my_integration: debug
+
+    # log level for the `aiohttp` Python package
+    aiohttp: error
+
+    # log level for both 'glances_api' and 'glances' integration
+    homeassistant.components.glances: fatal
+    glances_api: fatal
+
+    #Log level for local tuya
+    custom_components.localtuya: debug
+
+# Contar Erros https://www.home-assistant.io/integrations/system_log/
+counter:
+  warning_counter:
+    name: Warnings
+    icon: mdi:alert
+
+# Cotação Moeda https://forum.homeassistantbrasil.com.br/t/yahoo-finance-acompanhe-bolsas-de-valor-cotacao-de-moedas-acoes-e-varias-outras-coisas/5253
+yahoofinance:
+  symbols:
+    - USDBRL=X
+    - EURBRL=X
+    - symbol: BTC-USD
+      target_currency: BRL #(converte para BRL)
+    - symbol: DOGE-USD
+      target_currency: BRL #(converte para BRL)
+    - symbol: ETH-USD
+      target_currency: BRL #(converte para BRL)
+    - symbol: XRP-USD
+      target_currency: BRL #(converte para BRL)
+    - symbol: LTC-USD
+      target_currency: BRL #(converte para BRL)
+    - ^BVSP
+    - AESB3.SA
+    - AMAR3.SA
+    - B3SA3.SA
+    - BBDC4.SA
+    - INBR32.SA
+    - BOVA11.SA
+    - FLRY3.SA
+    - ITSA4.SA
+    - IVVB11.SA
+    - PETZ3.SA
+    - SUZB3.SA
+    - USIM5.SA
+    - VIVT3.SA
+    - DISB34.SA
+    - GGRC11.SA
+    - VISC11.SA
+    - BTCI11.SA
+    - BBPO11.SA
+    - MXRF11.SA
+  scan_interval: 240 #60 segundos para atualiza (mínimo 30 seg)
+  #hours: 1
+  show_trending_icon: true #Altera o ícone da moeda para a tendencia (alta, estável, baixa)
+  decimal_places: 2 # retira o limite de casa decimal (importante para criptomoeda)
+
+
