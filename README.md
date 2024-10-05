@@ -16,7 +16,8 @@ Date: 20/08/2024
 
 | Ambiente              | Descrição                     | Link                                                       |
 |:-----------           |    :---------:                |:----                                                       |
-| configuration	        | arquivo base de configuração  |[configuration](./Home_Assistant/config/configuration.yaml)        |
+| configuration	        | arquivo base de configuração  |[configuration](./Home_Assistant/config/configuration.yaml) |
+| HA                    | Comandos HA Supervisor        |[HA](./HA/HA_comandos.md)                                   |
 
 ## Integrando tudo.
 
